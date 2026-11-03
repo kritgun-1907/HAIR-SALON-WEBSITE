@@ -54,7 +54,7 @@ const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${St
 const WEEKDAY = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
 /** Start times on the half hour inside opening hours, leaving room for the services; today's soonest ones removed. */
-function timesFor(site: SiteInfo, date: string, minutesNeeded: number): string[] {
+export function timesFor(site: SiteInfo, date: string, minutesNeeded: number): string[] {
   const key = WEEKDAY[new Date(`${date}T00:00:00Z`).getUTCDay()];
   const intervals = site.openingHours[key] || [];
   const earliest = date === todayIST() ? nowMinutesIST() + LEAD_MINUTES : -1;

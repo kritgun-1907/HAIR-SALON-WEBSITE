@@ -92,6 +92,8 @@ export interface SiteInfo {
   horizonDays: number;
   requestSlaMinutes: number;
   policyVersion: string;
+  /** D73: the owner's "Simple booking form" switch. On: every booking button and offer page shows the one short form. */
+  simpleBooking?: boolean;
   contact: {
     phone: string | null;
     whatsapp: string | null;
@@ -188,6 +190,8 @@ export interface ManageExtras {
   requestedFor: { date: string; time: string | null } | null;
   /** `people` only for a group (D67): the price is for each person. */
   package: { name: string; price: number; services: string[]; people?: number } | null;
+  /** The simple booking form (D73): what the customer typed they want. Null for every other booking. */
+  wants?: string | null;
 }
 
 export interface ManageView {

@@ -80,9 +80,10 @@ async function closeBooking(id, { from, to, side = "salon", reason = null, by = 
   // Engine and phone bookings get a WhatsApp; request-lite ones are handled by phone as before.
   const engineBooking = updated.startAt && (updated.deposit?.amount || updated.requestExpiresAt || updated.source?.channel !== "web");
   // A WhatsApp-ad request (D62) has no time held yet, but the customer asked on WhatsApp, so a decline is answered there.
-  const waDeclined = updated.source?.channel === "wa_ad" && to === "declined";
+  // The simple booking form (D73) is the same kind of unpaid request, answered the same way.
+  const waDeclined = Appointment.isWaRequest(updated) && to === "declined";
   // An unpaid WhatsApp-ad request that is cancelled (by the salon or by the customer) has nothing to refund either.
-  const waCancelled = updated.source?.channel === "wa_ad" && to === "cancelled" && !(updated.deposit?.amount > 0);
+  const waCancelled = Appointment.isWaRequest(updated) && to === "cancelled" && !(updated.deposit?.amount > 0);
   if (notifyCustomer && (engineBooking || waDeclined) && updated.source?.channel !== "walkin" && ["cancelled", "declined", "expired"].includes(to)) {
     await notify({
       key: `${updated._id}:${to}`,

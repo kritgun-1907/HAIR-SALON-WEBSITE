@@ -8,12 +8,16 @@
  * `/book?src=wa&c=karwa&p=9876543210&service=<slug>` (D62) shows the unpaid WhatsApp
  * request form instead: service, day and time, name and phone, no payment and no code.
  * The paid sheet is not opened in that mode and is otherwise untouched.
+ *
+ * With the owner's simple booking form on (D73), /book shows that one short form on the page instead (any link,
+ * `?src=wa` included: the phone `p` and campaign `c` are still read), and neither sheet is opened.
  */
 
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { BookOpener } from "@/components/booking/BookOpener";
 import { WaBookEntry } from "@/components/offers/WaBookEntry";
+import { SimpleBookingForm } from "@/components/request/SimpleBookingForm";
 import { getServices, getSite } from "@/lib/api";
 
 export const metadata: Metadata = {
@@ -35,18 +39,36 @@ async function WaEntry() {
   return <WaBookEntry site={site} menu={menu} />;
 }
 
+/** The simple form (D73) when the owner has it on; otherwise the full booking, exactly as before. */
+async function BookBody() {
+  const site = await getSite();
+  if (site?.simpleBooking) {
+    return (
+      <>
+        <p className="mt-4 text-[17px] text-ink-muted">Pick a day and time and tell us what you would like. We confirm it on WhatsApp.</p>
+        <div className="mt-8">
+          <SimpleBookingForm site={site} />
+        </div>
+      </>
+    );
+  }
+  return (
+    <>
+      <p className="mt-4 text-[17px] text-ink-muted">Pick your services and a time that suits you.</p>
+      <BookOpener />
+      <WaEntry />
+    </>
+  );
+}
+
 export default function BookPage() {
   return (
     <main className="mx-auto w-full max-w-[640px] px-4 py-16 md:px-0 md:py-24">
       <h1 className="font-serif text-[44px] leading-none md:text-[64px]">
         Book your <em className="text-gold">visit</em>.
       </h1>
-      <p className="mt-4 text-[17px] text-ink-muted">Pick your services and a time that suits you.</p>
       <Suspense fallback={null}>
-        <BookOpener />
-      </Suspense>
-      <Suspense fallback={null}>
-        <WaEntry />
+        <BookBody />
       </Suspense>
     </main>
   );

@@ -298,6 +298,8 @@ function publicBooking(appt) {
     ...(appt.guests.length > 1 ? { groupMode: appt.groupMode || "parallel" } : {}),
     // A request made on an offer page (D62/D64): what they asked for, until a time is confirmed, and the package as printed.
     requestedFor: !appt.startAt && appt.requestedWindow?.date ? { date: appt.requestedWindow.date, time: appt.requestedWindow.time || null } : null,
+    // The simple booking form (D73): what the customer typed they want. Their own words, on their own booking only.
+    wants: appt.source?.channel === "simple" ? appt.notes || null : null,
     package: appt.source?.offerPackage?.name ? { name: appt.source.offerPackage.name, price: appt.source.offerPackage.price, services: appt.source.offerPackage.services || [], ...(appt.guests.length > 1 ? { people: appt.guests.length } : {}) } : null,
   };
 }

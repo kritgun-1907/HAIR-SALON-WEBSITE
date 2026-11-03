@@ -129,6 +129,8 @@ const SETTINGS_PATHS = [
   "maxActiveBookingsPerPhone",
   // People per booking (D68). 1 switches group bookings off everywhere a group is made.
   "maxGuests",
+  // The simple booking form (D73): one short form for every booking and offer page instead of the full sheet.
+  "simpleBooking",
   "contact.parkingNote",
   "media.heroVideoUrl",
   "media.heroPosterUrl",
@@ -227,6 +229,7 @@ router.patch(
     body("requestSlaMinutes").optional().isInt({ min: 15, max: 24 * 60 }),
     body("maxActiveBookingsPerPhone").optional().isInt({ min: 1, max: 10 }),
     body("maxGuests").optional().isInt({ min: 1, max: 10 }).withMessage("People per booking is a whole number from 1 to 10").toInt(),
+    body("simpleBooking").optional().isBoolean({ strict: true }).withMessage("Simple booking form is on or off"),
     body("contact.parkingNote")
       .optional({ nullable: true })
       .customSanitizer((v) => (v === "" ? null : v))
