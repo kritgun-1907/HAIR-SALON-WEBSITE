@@ -572,7 +572,9 @@ test("payment log errors: needs datafixes.manage like the rest of the page", asy
 });
 
 test("the existing tabs keep their rule: nothing from today, and the new kind does not leak into them", async () => {
-  await online({ razorpayPaymentId: "pay_tabs1" });
+  // Today in the salon's time zone, not the fixed date the other tests use: that date stops being "today" and
+  // falls inside the 30-day window a day later, so the tabs would rightly list it.
+  await online({ razorpayPaymentId: "pay_tabs1", date: require("../utils/time").salonDate() });
   await asRole("receptionist", ["datafixes.manage"]);
   for (const kind of ["duplicate", "invalid", "unassigned"]) {
     const r = await shimCall("GET", `/api/data-fixes?kind=${kind}`);
