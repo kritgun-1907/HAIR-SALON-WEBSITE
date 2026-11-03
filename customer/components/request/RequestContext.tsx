@@ -12,6 +12,10 @@
  * and payments work), the same buttons open the BookingSheet instead —
  * `kind: "book"`. Switching every artist off in the staff app flips the site
  * back to the request form within a minute (CP4 rollback).
+ *
+ * D73: when the owner switches the SIMPLE booking form on (staff app, Website → Settings), every button opens
+ * the SimpleBookingSheet instead — `kind: "simple"`: name, mobile, day, time and one box for what they want.
+ * It wins over both sheets above; switching it off brings back whichever of them applied, unchanged.
  */
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
@@ -28,7 +32,7 @@ export interface RequestPreset {
   artistSlug?: string;
 }
 
-export type SheetKind = "book" | "request";
+export type SheetKind = "book" | "request" | "simple";
 
 /** The offer page's request form carries this id; on an offer page every call-to-action scrolls to it (see RequestProvider). */
 export const OFFER_FORM_ID = "send-request";
@@ -41,6 +45,9 @@ export const OFFER_FIELDS_ID = "request-fields";
 
 /** The label every call-to-action shows on an offer page. */
 export const OFFER_CTA_LABEL = "Book a request";
+
+/** The label a call-to-action shows with the simple booking form on (D73), on every page. */
+export const SIMPLE_CTA_LABEL = "Book an appointment";
 
 interface RequestState {
   isOpen: boolean;
@@ -57,7 +64,7 @@ interface RequestState {
   whatsapp: string | null;
   /** False when the form can't be used: rollback mode, or the menu didn't load. */
   formEnabled: boolean;
-  /** Which sheet the buttons open: live booking, or the Phase 1 request form. */
+  /** Which sheet the buttons open: live booking, the Phase 1 request form, or the simple form (D73). */
   kind: SheetKind;
   /**
    * True on /offers/*. There the buttons say "Book a request" and scroll down to the offer's own form instead of
@@ -72,18 +79,21 @@ export function RequestProvider({
   whatsappNumber,
   formAvailable,
   bookingEnabled = false,
+  simpleBooking = false,
   children,
 }: {
   whatsappNumber: string | null;
   formAvailable: boolean;
   bookingEnabled?: boolean;
+  /** The owner's "Simple booking form" switch (D73). Needs only the site's hours, not the menu. */
+  simpleBooking?: boolean;
   children: ReactNode;
 }) {
-  const kind: SheetKind = bookingEnabled ? "book" : "request";
+  const kind: SheetKind = simpleBooking ? "simple" : bookingEnabled ? "book" : "request";
   const [isOpen, setOpen] = useState(false);
   const [preset, setPreset] = useState<RequestPreset>({});
   const [openedAt, setOpenedAt] = useState<Date | null>(null);
-  const formEnabled = formAvailable && BOOKING_MODE === "request";
+  const formEnabled = (simpleBooking || formAvailable) && BOOKING_MODE === "request";
 
   const pathname = usePathname() ?? "";
   const onOfferPage = pathname.startsWith("/offers/");
@@ -150,8 +160,8 @@ export function RequestCta({
   if (formEnabled || onOfferPage) {
     return (
       <Button variant={variant} tone={tone} className={className} onClick={() => open(preset)} aria-haspopup={onOfferPage ? undefined : "dialog"}>
-        {/* Request mode must say "request" (CP1); live booking says "book"; an offer page says "Book a request". */}
-        {onOfferPage ? OFFER_CTA_LABEL : label ? (kind === "book" ? label.replace(/^Request/, "Book") : label) : kind === "book" ? "Book your slot" : "Request your slot"}
+        {/* Request mode must say "request" (CP1); live booking says "book"; an offer page says "Book a request"; the simple form (D73) says "Book an appointment" everywhere. */}
+        {kind === "simple" ? SIMPLE_CTA_LABEL : onOfferPage ? OFFER_CTA_LABEL : label ? (kind === "book" ? label.replace(/^Request/, "Book") : label) : kind === "book" ? "Book your slot" : "Request your slot"}
       </Button>
     );
   }

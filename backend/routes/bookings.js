@@ -213,7 +213,7 @@ router.post(
         artistId: req.body.artistId || null,
         artistIds,
         // An older WhatsApp-ad request made before its link was wired up gets its link key now (D62).
-        extraSet: appt.source?.channel === "wa_ad" && !appt.manageTokenHash ? { manageTokenHash: hashManageToken(manageToken(appt._id)) } : {},
+        extraSet: Appointment.isWaRequest(appt) && !appt.manageTokenHash ? { manageTokenHash: hashManageToken(manageToken(appt._id)) } : {},
         ...actor(req),
       });
       if (!out.ok) return conflict(res, appt._id);
@@ -224,7 +224,8 @@ router.post(
       // A website or offer-page request turning into a booking is the conversion the ads paid
       // for: Schedule to Meta, matched on the ids saved with the request (D65). Never throws.
       await Promise.all([
-        updated.source?.channel === "wa_ad" ? waRequest.sendConfirmed(updated) : null,
+        // …and so are simple-form bookings (D73), the same way.
+        Appointment.isWaRequest(updated) ? waRequest.sendConfirmed(updated) : null,
         metaCapi.send("Schedule", updated),
       ]);
 

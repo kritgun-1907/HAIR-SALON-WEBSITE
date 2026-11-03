@@ -130,6 +130,14 @@ const siteSettingsSchema = new mongoose.Schema(
      * refuses only a payment that is clearly wrong. Changed from the staff app sidebar; every change is audited.
      */
     paymentIdCheck: { type: String, enum: ["log", "enforce"], default: "log" },
+    /**
+     * D73: the simple booking form. On: every "Book" button and every offer page on the website shows ONE short form
+     * (name, mobile, day, time and a box for the service they want in their own words), sent to
+     * POST /api/public/requests/simple: no OTP, no payment, a WhatsApp "we have received your booking request" at once.
+     * Off (the default): the full booking sheet and the offer page's own form, exactly as before. Switched from the
+     * staff app (Website -> Settings); every change is audited.
+     */
+    simpleBooking: { type: Boolean, default: false },
     policyVersion: { type: String, default: "2026-10-v1" },
 
     contact: {
@@ -298,6 +306,7 @@ siteSettingsSchema.methods.toPublic = function () {
     horizonDays: this.horizonDays,
     requestSlaMinutes: this.requestSlaMinutes,
     policyVersion: this.policyVersion,
+    simpleBooking: Boolean(this.simpleBooking),
     contact: {
       phone: this.contact?.phone ?? null,
       whatsapp: this.contact?.whatsapp ?? null,

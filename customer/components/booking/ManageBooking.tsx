@@ -184,6 +184,12 @@ export function ManageBooking({ token }: { token: string }) {
             </ul>
             <p className="mt-3 text-ink-muted">Nothing is paid online. You pay at the salon after your visit.</p>
           </div>
+        ) : b.guests.every((g) => !g.items.length) ? (
+          // The simple booking form (D73): no services from the list, only what they asked for in their own words.
+          <div>
+            {b.wants ? <p>“{b.wants}”</p> : <p className="text-ink-muted">We will talk through the services with you.</p>}
+            <p className="mt-3 text-ink-muted">Nothing is paid online. You pay at the salon after your visit.</p>
+          </div>
         ) : (
         <>
         {b.guests.length > 1 ? (

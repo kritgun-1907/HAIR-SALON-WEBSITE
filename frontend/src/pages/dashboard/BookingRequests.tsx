@@ -73,7 +73,7 @@ interface BookingRequest {
   notes: string | null;
   internalNote: string | null;
   utm: { source?: string; medium?: string; campaign?: string } | null;
-  /** "wa_ad" for a request from a WhatsApp ad link or offer page (D62). */
+  /** "wa_ad" for a request from a WhatsApp ad link or offer page (D62); "simple" for the simple booking form (D73). */
   channel?: string | null;
   campaign?: string | null;
   offer?: { slug: string; headline: string | null; price: number | null; priceNote: string | null } | null;
@@ -105,6 +105,9 @@ interface Artist {
   id: string;
   name: string;
 }
+
+/** Unpaid requests answered on WhatsApp: WhatsApp-ad / offer-page requests (D62) and the simple booking form (D73). */
+const isWaRequest = (channel?: string | null) => channel === "wa_ad" || channel === "simple";
 
 const TABS: { key: Status; label: string }[] = [
   { key: "requested", label: "New" },
@@ -229,8 +232,9 @@ export default function BookingRequests() {
   }, []);
 
   // WhatsApp-ad requests get their own section on the New tab (D62).
-  const waRequests = useMemo(() => requests.filter((r) => r.channel === "wa_ad"), [requests]);
-  const otherRequests = useMemo(() => requests.filter((r) => r.channel !== "wa_ad"), [requests]);
+  // …and so do simple-form bookings (D73): the same kind of unpaid request, answered on WhatsApp.
+  const waRequests = useMemo(() => requests.filter((r) => isWaRequest(r.channel)), [requests]);
+  const otherRequests = useMemo(() => requests.filter((r) => !isWaRequest(r.channel)), [requests]);
 
   /** Replace one row after an action, or drop it if it left this tab. */
   const applyUpdate = (updated: BookingRequest) => {
@@ -304,7 +308,7 @@ export default function BookingRequests() {
           {tab === "requested" && waRequests.length > 0 && (
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 space-y-3">
               <div className="flex flex-wrap items-baseline justify-between gap-2 px-1">
-                <h3 className="text-sm font-semibold text-emerald-900">Requested (unpaid) · from WhatsApp ads and offer pages</h3>
+                <h3 className="text-sm font-semibold text-emerald-900">Requested (unpaid) · from WhatsApp ads, offer pages and the simple form</h3>
                 <span className="text-xs text-emerald-800/80">Nothing is paid or held. Confirm to book it; the customer is told on WhatsApp.</span>
               </div>
               {waRequests.map((r) => (
@@ -367,7 +371,8 @@ function RequestCard({
   const [alternatives, setAlternatives] = useState<{ time: string; mode?: "parallel" | "series"; suggestions: { guestKey: string; artistId: string | null }[] }[]>([]);
   // "One artist, one after another" when there are not enough artists free side by side (D67).
   const [seriesOption, setSeriesOption] = useState<{ minutes: number; artistName: string; suggestions: { guestKey: string; artistId: string | null }[] } | null>(null);
-  const isWa = r.channel === "wa_ad";
+  const isWa = isWaRequest(r.channel);
+  const isSimple = r.channel === "simple";
   const [reason, setReason] = useState("");
   const [note, setNote] = useState(r.internalNote || "");
   const [busy, setBusy] = useState(false);
@@ -454,7 +459,7 @@ function RequestCard({
             {r.people && <span className="text-xs px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 font-medium">{r.people} people</span>}
             {isWa && (
               <>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium">WhatsApp ad</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium">{isSimple ? "Simple form" : "WhatsApp ad"}</span>
                 {r.campaign && <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-700">#{r.campaign}</span>}
                 {r.unpaid && r.status === "requested" && <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Unpaid</span>}
               </>
@@ -566,7 +571,12 @@ function RequestCard({
             </div>
           ) : null}
           {r.preferredArtistName && <div className="text-stone-600">Prefers {r.preferredArtistName}</div>}
-          {r.notes && <div className="text-stone-600 italic">“{r.notes}”</div>}
+          {r.notes && (
+            <div className="text-stone-600 italic">
+              {isSimple && <span className="not-italic font-medium text-stone-800">Wants: </span>}“{r.notes}”
+            </div>
+          )}
+          {isSimple && !r.notes && <div className="text-stone-500">No service named. Ask them on the call.</div>}
           {r.offer && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
               <div className="font-semibold">Offer: {r.offer.headline || r.offer.slug}</div>

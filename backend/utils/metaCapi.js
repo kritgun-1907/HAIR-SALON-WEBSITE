@@ -40,7 +40,7 @@
  */
 
 const TIMEOUT_MS = 4000;
-const ONLINE_CHANNELS = new Set(["web", "wa_ad"]);
+const ONLINE_CHANNELS = new Set(["web", "wa_ad", "simple"]);
 const EVENTS = new Set(["Lead", "Schedule"]);
 
 // fb.<subdomain index>.<creation ms>.<random | fbclid>, as set by the pixel.

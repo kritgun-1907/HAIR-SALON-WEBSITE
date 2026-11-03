@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Instrument_Serif, Manrope } from "next/font/google";
 import "./globals.css";
 import { getArtists, getCampaigns, getPackages, getServices, getSite } from "@/lib/api";
@@ -9,6 +10,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { RequestProvider } from "@/components/request/RequestContext";
 import { RequestSheet } from "@/components/request/RequestSheet";
 import { BookingSheet } from "@/components/request/BookingSheet";
+import { SimpleBookingSheet } from "@/components/request/SimpleBookingSheet";
 import { StickyMobileBar } from "@/components/StickyMobileBar";
 import { Header } from "@/components/site/Header";
 import { OfferBar } from "@/components/offers/OfferBar";
@@ -73,6 +75,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const formAvailable = Boolean(site && her && him && (her.length || him.length));
   // Phase 2 (T2.22): live booking once an artist is online and payments work.
   const bookingEnabled = Boolean(formAvailable && site?.onlineBooking?.enabled);
+  // D73: the owner's simple booking form wins over both sheets while it is on. It needs the opening hours, not the menu.
+  const simpleBooking = Boolean(site?.simpleBooking);
 
   return (
     <html lang="en-IN" className={`${instrumentSerif.variable} ${manrope.variable} h-full antialiased`} suppressHydrationWarning>
@@ -80,16 +84,21 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: MOTION_BOOT }} />
       </head>
       <body className="flex min-h-full flex-col bg-ivory">
-        <RequestProvider whatsappNumber={site?.contact.whatsapp ?? null} formAvailable={formAvailable} bookingEnabled={bookingEnabled}>
+        <RequestProvider whatsappNumber={site?.contact.whatsapp ?? null} formAvailable={formAvailable} bookingEnabled={bookingEnabled} simpleBooking={simpleBooking}>
           {/* Live offer (CF D29): colourful bar above the header on every page, and a pop-up. */}
           <OfferBar data={campaigns} />
           <Header />
           <div className="flex flex-1 flex-col">{children}</div>
           <Footer site={site} />
-          {site && formAvailable && !bookingEnabled && (
+          {site && simpleBooking && (
+            <Suspense fallback={null}>
+              <SimpleBookingSheet site={site} />
+            </Suspense>
+          )}
+          {site && formAvailable && !bookingEnabled && !simpleBooking && (
             <RequestSheet site={site} services={{ her: her ?? [], him: him ?? [] }} artists={artists ?? []} packages={packages ?? []} />
           )}
-          {site && bookingEnabled && (
+          {site && bookingEnabled && !simpleBooking && (
             <BookingSheet site={site} services={{ her: her ?? [], him: him ?? [] }} artists={artists ?? []} packages={packages ?? []} />
           )}
           <StickyMobileBar mapUrl={site?.contact.mapUrl ?? null} watchId="hero-cta" />

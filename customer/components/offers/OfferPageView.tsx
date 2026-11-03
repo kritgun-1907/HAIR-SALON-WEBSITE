@@ -6,6 +6,9 @@
  * the end date is the real one, there is no countdown or "only N left", and the page says
  * plainly that the price is the offer's and is given at the salon.
  *
+ * With the owner's simple booking form on (D73), the offer's own form gives way to the same short form every
+ * other booking button uses (day, time, name, mobile, what they want), sent with this offer's address.
+ *
  * `scheduled` and `ended` offers (reached by their address) say so and offer the normal
  * booking link instead of a form that the server would refuse.
  */
@@ -14,6 +17,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { OfferSlideshow, type Slide } from "@/components/offers/OfferSlideshow";
 import { WaRequestForm } from "@/components/offers/WaRequestForm";
+import { SimpleBookingForm } from "@/components/request/SimpleBookingForm";
 import { OFFER_FORM_ID } from "@/components/request/RequestContext";
 import { ViewContent } from "@/components/analytics/ViewContent";
 import { offerTill, rupees } from "@/lib/format";
@@ -58,7 +62,19 @@ export function OfferPageView({ offer, site }: { offer: OfferPageData; site: Sit
       {/* Every "Book a request" button on this page scrolls here (components/request/RequestContext.tsx). */}
       <section id={OFFER_FORM_ID} className="scroll-mt-20 bg-ivory px-4 py-14 md:px-16 md:py-24">
         <div className="mx-auto max-w-[640px]">
-          {live && site ? (
+          {live && site && site.simpleBooking ? (
+            <>
+              <h2 className="font-serif text-[32px] leading-tight md:text-[44px]">
+                Book your <em className="text-gold">appointment</em>.
+              </h2>
+              <p className="mt-3 text-[16px] leading-[1.6] text-ink-muted">
+                Pick a day and time and tell us what you would like. We confirm it on WhatsApp. The offer price is given at the salon when you pay after your visit.
+              </p>
+              <div className="mt-8">
+                <SimpleBookingForm site={site} offerSlug={offer.slug} />
+              </div>
+            </>
+          ) : live && site ? (
             <>
               <h2 className="font-serif text-[32px] leading-tight md:text-[44px]">
                 Send us a <em className="text-gold">request</em>.

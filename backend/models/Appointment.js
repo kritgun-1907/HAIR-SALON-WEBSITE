@@ -44,7 +44,13 @@ const STATUSES = [
 ];
 const MODES = ["instant", "request"];
 /** "wa_ad": a request made from a WhatsApp ad link, unpaid until the salon confirms it (D62). */
-const CHANNELS = ["web", "desk", "phone", "whatsapp", "walkin", "wa_ad"];
+const CHANNELS = ["web", "desk", "phone", "whatsapp", "walkin", "wa_ad", "simple"];
+/**
+ * Unpaid requests that are answered on WhatsApp: "wa_ad" (WhatsApp ad link or offer page, D62) and "simple"
+ * (the simple booking form, D73: name, phone, day, time and what they want in their own words). Confirming one
+ * sends the customer a WhatsApp with the time, declining one sends the unpaid "request declined" wording.
+ */
+const WA_REQUEST_CHANNELS = ["wa_ad", "simple"];
 const WINDOWS = ["morning", "afternoon", "evening"];
 const DEPOSIT_STATUSES = ["none", "pending", "paid", "refunded", "partially_refunded", "forfeited", "applied"];
 const REFUND_STATUSES = ["none", "pending", "processing", "processed", "failed"];
@@ -291,5 +297,7 @@ module.exports = mongoose.model("Appointment", appointmentSchema);
 module.exports.STATUSES = STATUSES;
 module.exports.WINDOWS = WINDOWS;
 module.exports.CHANNELS = CHANNELS;
+module.exports.WA_REQUEST_CHANNELS = WA_REQUEST_CHANNELS;
+module.exports.isWaRequest = (appt) => WA_REQUEST_CHANNELS.includes(appt?.source?.channel);
 module.exports.generateRef = generateRef;
 module.exports.REF_ALPHABET = REF_ALPHABET;

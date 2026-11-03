@@ -109,6 +109,8 @@ function fitItemsToPackage(items, pkgMinutes) {
  *  - Any other request keeps each service's own time, back to back, with its buffer.
  *  - A package with no stored time, or with no service matched on the menu, cannot be locked: it
  *    still confirms, takes no lock, and says so (`lock.warning`).
+ *  - A request with no services at all (the simple booking form, D73: the customer typed what they
+ *    want) cannot be locked either: it confirms for the default hour, takes no lock, and says so.
  *
  * Each person has ONE artist (`artistFor(guest)`, or one artist for everybody). People with different
  * artists are side by side from the start; people who share an artist follow one another, in the order
@@ -130,6 +132,10 @@ function planRequestTime(appt, artistFor, startMs) {
   let lock = { taken: itemCount > 0 };
   if (pkg && (!hasPkgTime || !itemCount)) {
     lock = { taken: false, warning: !hasPkgTime ? "No lock taken: this package has no time set, so the artist's calendar is not blocked. Check their day by hand." : "No lock taken: none of this package's services are on the service list, so the artist's calendar is not blocked. Check their day by hand." };
+  }
+
+  if (!pkg && !itemCount) {
+    lock = { taken: false, warning: "No lock taken: this booking has no services from the list (the customer typed what they want), so the artist's calendar is not blocked. Check their day by hand." };
   }
 
   for (const g of guests) {
@@ -154,6 +160,7 @@ function planRequestTime(appt, artistFor, startMs) {
     end = Math.max(end, cursor);
   });
   if (!lock.taken && hasPkgTime) end = Math.max(end, startMs + pkgMinutes * 60_000);
+  if (!pkg && !itemCount) end = Math.max(end, startMs + DEFAULT_DURATION_MINUTES * 60_000);
   return { guests, startAt: new Date(startMs), endAt: new Date(end), lock };
 }
 

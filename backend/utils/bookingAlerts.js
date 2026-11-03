@@ -32,22 +32,24 @@ function requestAlertText(appt) {
   const items = (appt.guests.length > 1 ? appt.guests.slice(0, 1) : appt.guests).flatMap((g) => g.items);
   const pkg = appt.source?.offerPackage;
   const lines = [
-    `🆕 ${appt.source?.channel === "wa_ad" ? "WhatsApp ad" : "Website"} request ${appt.ref}`,
+    `🆕 ${appt.source?.channel === "wa_ad" ? "WhatsApp ad" : appt.source?.channel === "simple" ? "Simple form" : "Website"} request ${appt.ref}`,
     `${appt.name} · ${appt.contact}`,
     appt.requestedWindow.time
       ? `${formatDate(appt.requestedWindow.date)}, ${appt.requestedWindow.time}`
       : `${formatDate(appt.requestedWindow.date)}, ${WINDOW_LABEL[appt.requestedWindow.window] || appt.requestedWindow.window}`,
     // A package request (D64) shows the package, its ONE price and the services as printed on the poster.
-    ...(pkg ? [`Package: ${pkg.name} — ${rupees(pkg.price)}`, ...pkg.services.map((n) => `• ${n}`)] : [...items.map((i) => `• ${i.name} — ${rupees(i.publicPrice)}`), `Total ${rupees(appt.pricing.total)}`]),
+    // A simple-form booking (D73) has no services from the list and no price: the customer's words are the note.
+    ...(pkg ? [`Package: ${pkg.name} — ${rupees(pkg.price)}`, ...pkg.services.map((n) => `• ${n}`)] : !items.length ? [] : [...items.map((i) => `• ${i.name} — ${rupees(i.publicPrice)}`), `Total ${rupees(appt.pricing.total)}`]),
   ];
   // A group (D67). Nothing is added for one person.
   if (appt.guests.length > 1) lines.push(`People: ${appt.guests.length}${pkg ? ` — total ${rupees(appt.pricing.total)}` : ""}`);
   if (appt.preferredArtistName) lines.push(`Prefers: ${appt.preferredArtistName}`);
-  if (appt.notes) lines.push(`Note: ${appt.notes}`);
+  if (appt.notes) lines.push(`${appt.source?.channel === "simple" ? "Wants" : "Note"}: ${appt.notes}`);
   const utm = appt.source?.utm;
   if (utm?.campaign || utm?.source) lines.push(`From: ${[utm.source, utm.campaign].filter(Boolean).join(" / ")}`);
   if (appt.source?.offerSlug) lines.push(`Offer: ${appt.source.offerHeadline || appt.source.offerSlug} (apply it at billing; nothing is discounted yet)`);
   if (appt.source?.channel === "wa_ad") lines.push("Unpaid request from a WhatsApp ad.");
+  if (appt.source?.channel === "simple") lines.push("Unpaid request from the simple booking form: no service chosen from the list, see the note.");
   lines.push("", "Confirm a time in the staff app → Requests.");
   return lines.join("\n");
 }

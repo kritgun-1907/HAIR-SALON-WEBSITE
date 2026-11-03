@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowDown, ArrowUp, Eye, EyeOff, Globe, Loader2, Plus, Save, Star, Trash2, X } from "lucide-react";
 import MediaInput from "@/components/website/MediaInput";
+import SimpleBookingSwitch from "@/components/SimpleBookingSwitch";
 
 const API = import.meta.env.VITE_BACKEND_URL || "";
 
@@ -265,6 +266,9 @@ export default function WebsiteSettings() {
         </h2>
         <p className="text-sm text-stone-500 mt-0.5">Contact details and opening hours shown on the customer website.</p>
       </div>
+
+      {/* The simple booking form (D73): saved on tap, like the artist switches. */}
+      <SimpleBookingSwitch />
 
       {/* Contact */}
       <section className="bg-white rounded-xl border border-stone-200/80 shadow-sm p-5 mb-5">

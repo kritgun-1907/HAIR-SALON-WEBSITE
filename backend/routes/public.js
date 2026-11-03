@@ -660,6 +660,7 @@ router.use(require("./publicBooking"));
 router.use(require("./publicOfferPages"));
 router.use(require("./publicWaRequest"));
 router.use(require("./publicLeads"));
+router.use(require("./publicSimpleBooking"));
 
 module.exports = router;
 module.exports.dateProblem = dateProblem;
