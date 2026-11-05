@@ -19,7 +19,6 @@ export function SimpleBookingSheet({ site }: { site: SiteInfo }) {
   const isOpen = anyOpen && kind === "simple";
   /** A sent booking starts fresh next time; an unfinished one is kept while the sheet is closed. */
   const [formKey, setFormKey] = useState(0);
-  const [sent, setSent] = useState(false);
 
   const panel = useRef<HTMLDivElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
@@ -39,11 +38,7 @@ export function SimpleBookingSheet({ site }: { site: SiteInfo }) {
   const handleClose = useCallback(() => {
     close();
     returnFocus.current?.focus?.();
-    if (sent) {
-      setSent(false);
-      setFormKey((k) => k + 1);
-    }
-  }, [close, sent]);
+  }, [close]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -82,7 +77,15 @@ export function SimpleBookingSheet({ site }: { site: SiteInfo }) {
         <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6">
           {/* Mounted once opened, so "today" in the day strip is the visitor's today, never the build machine's. */}
           {openedAt && (
-            <SimpleBookingForm key={formKey} site={site} onSent={() => setSent(true)} onDone={handleClose} />
+            <SimpleBookingForm
+              key={formKey}
+              site={site}
+              onSent={() => {
+                // The form has moved the page to /book/confirmed: close over it and start fresh next time.
+                close();
+                setFormKey((k) => k + 1);
+              }}
+            />
           )}
         </div>
       </div>
