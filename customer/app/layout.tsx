@@ -6,6 +6,7 @@ import { getArtists, getCampaigns, getPackages, getServices, getSite } from "@/l
 import { SITE_URL, INDEXABLE } from "@/lib/site";
 import { UtmCapture } from "@/components/UtmCapture";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
+import { GoogleTag } from "@/components/analytics/GoogleTag";
 import { Analytics } from "@vercel/analytics/next";
 import { RequestProvider } from "@/components/request/RequestContext";
 import { RequestSheet } from "@/components/request/RequestSheet";
@@ -106,6 +107,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         </RequestProvider>
         <UtmCapture />
         <MetaPixel />
+        <GoogleTag />
         {/* Vercel Web Analytics: visitors and page views, no cookies. Hobby plan: 50,000 page views a month, shared by the account. */}
         <Analytics />
         <RevealObserver />

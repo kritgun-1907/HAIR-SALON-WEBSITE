@@ -8,15 +8,16 @@
  * Day, time, name, mobile and ONE box for the service they want (or anything else) in their own words. No menu,
  * no package, no price, no OTP and no payment. It goes to POST /api/public/requests/simple; the customer gets a
  * WhatsApp at once that we have their booking and will confirm it shortly, and reception calls or messages them.
+ * On success the page moves to /book/confirmed, the thank-you page ads count leads on.
  *
  * What it sends is only what the customer typed; the server checks the time again and never takes a price from
  * here. The hidden "website" box is a trap for bots: people never see or fill it.
  */
 
 import { useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { addDays, clock, dayParts, isOpenOn, todayIST, whatsappHref } from "@/lib/format";
+import { addDays, clock, dayParts, isOpenOn, todayIST } from "@/lib/format";
 import { mobileDigits, nameOk } from "@/lib/leads";
 import type { SiteInfo } from "@/lib/types";
 import { pixelHeaders, track, trackOnce } from "@/lib/pixel";
@@ -41,7 +42,6 @@ export function SimpleBookingForm({
   campaign: campaignProp,
   initialPhone,
   onSent,
-  onDone,
 }: {
   site: SiteInfo;
   /** On an offer page: the offer's address, so the desk knows which offer to apply. */
@@ -49,12 +49,11 @@ export function SimpleBookingForm({
   /** Ad tag. When not given, it is read from the page address (?c=karwa). The server tidies it again. */
   campaign?: string | null;
   initialPhone?: string;
-  /** Called once the booking has gone through (the sheet starts fresh next time). */
+  /** Called once the booking has gone through, as the page moves to /book/confirmed (the sheet closes and starts fresh). */
   onSent?: () => void;
-  /** Shown after sending (the sheet uses it for its "Done" button). */
-  onDone?: () => void;
 }) {
   const params = useSearchParams();
+  const router = useRouter();
   const campaign = campaignProp ?? params.get("c");
   const days = useMemo(() => {
     const today = todayIST();
@@ -68,7 +67,6 @@ export function SimpleBookingForm({
   const [trap, setTrap] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState<Result | null>(null);
 
   const times = date ? timesFor(site, date, MINUTES_ASSUMED) : [];
   const digits = mobileDigits(phone);
@@ -108,43 +106,15 @@ export function SimpleBookingForm({
         return;
       }
       const r = data as Result;
-      setResult(r);
-      onSent?.();
       if (!r.duplicate) trackOnce("Lead", r.ref, { content_name: offerSlug ?? "Simple booking" });
+      // Its own page so ads can count the lead (the Google Ads conversion fires there). No name or phone in the address.
+      router.push(`/book/confirmed?${new URLSearchParams({ ref: r.ref, date: r.date, time: r.time, ...(r.duplicate ? { dup: "1" } : {}) })}`);
+      onSent?.();
     } catch {
       setError("You seem to be offline. Check your connection and try again.");
     } finally {
       setSending(false);
     }
-  }
-
-  if (result) {
-    const wa = whatsappHref(site.contact.whatsapp, `Hi, about my booking ${result.ref}.`);
-    return (
-      <div role="status" className="rounded-[var(--radius-card)] border border-line bg-ivory-2 p-6 md:p-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">{result.duplicate ? "Already with us" : "Booking received"}</p>
-        <h3 className="mt-3 font-serif text-[30px] leading-tight md:text-[38px]">Thank you, {name.trim().split(" ")[0] || "and welcome"}.</h3>
-        <p className="mt-3 text-[16px] leading-[1.6]">
-          We have your booking for <b>{dayParts(result.date).long}</b> at <b>{clock(result.time)}</b>. We have sent you a WhatsApp, and our team will reach out
-          to you shortly to confirm it. Nothing to pay now.
-        </p>
-        <p className="mt-2 text-[14px] text-ink-muted">
-          Your reference is <span className="font-mono">{result.ref}</span>.
-        </p>
-        <div className="mt-5 flex flex-wrap gap-3">
-          {wa && (
-            <Button variant="whatsapp" href={wa} target="_blank" rel="noreferrer">
-              Message us on WhatsApp
-            </Button>
-          )}
-          {onDone && (
-            <Button variant="secondary" onClick={onDone}>
-              Done
-            </Button>
-          )}
-        </div>
-      </div>
-    );
   }
 
   const field = "mt-2 h-12 w-full rounded-[var(--radius-control)] border border-line bg-ivory px-4 text-[16px] outline-none focus:border-gold-deep";
