@@ -15,7 +15,7 @@
  */
 
 import { useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { addDays, clock, dayParts, isOpenOn, todayIST } from "@/lib/format";
 import { mobileDigits, nameOk } from "@/lib/leads";
@@ -53,7 +53,6 @@ export function SimpleBookingForm({
   onSent?: () => void;
 }) {
   const params = useSearchParams();
-  const router = useRouter();
   const campaign = campaignProp ?? params.get("c");
   const days = useMemo(() => {
     const today = todayIST();
@@ -107,8 +106,11 @@ export function SimpleBookingForm({
       }
       const r = data as Result;
       if (!r.duplicate) trackOnce("Lead", r.ref, { content_name: offerSlug ?? "Simple booking" });
-      // Its own page so ads can count the lead (the Google Ads conversion fires there). No name or phone in the address.
-      router.push(`/book/confirmed?${new URLSearchParams({ ref: r.ref, date: r.date, time: r.time, ...(r.duplicate ? { dup: "1" } : {}) })}`);
+      // Its own page so ads can count the lead. A FULL page load, not router.push: Google Ads counts the lead on a page
+      // load of /book/confirmed and may not see a client-side route change. No name or phone in the address. Meta's Lead
+      // above may be cut short by the load; the server sends it too (Conversions API).
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.assign(`/book/confirmed?${new URLSearchParams({ ref: r.ref, date: r.date, time: r.time, ...(r.duplicate ? { dup: "1" } : {}) })}`);
       onSent?.();
     } catch {
       setError("You seem to be offline. Check your connection and try again.");
